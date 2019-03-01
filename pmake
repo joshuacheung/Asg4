@@ -5,7 +5,7 @@ use warnings;
 
 my @inputs;
 
-my $makefile = $ARGV[0];
+my $makefile = "test1";
 open my $fh, '<', $makefile or die "Cannot open file : $_"; #file handler
 use Data::Dumper;
 
@@ -17,18 +17,26 @@ while(my $line = <$fh>){
 
 sub parse_dep ($) {
    my ($line) = @_;
-   return undef unless $line =~ m/^(\S+)\s*:\s*(.*?)\s*$/;
-   my ($target, $dependency) = ($1, $2);
-   my @dependencies = split m/\s+/, $dependency;
-   return $target, \@dependencies;
+    return undef unless $line =~ m/^(\S+)\s*:\s*(.*?)\s*$/;
+    my ($target, $dependency) = ($1, $2);
+    my @dependencies = split m/\s+/, $dependency;
+    return $target, \@dependencies;
+
 }
 
 
 my %graph;
+my %comgraph;
 for my $input (@inputs) {
    my ($target, $deps) = parse_dep $input;
-   print "" and next unless defined $target;
-   $graph{$target} = $deps;
+   if($input=~ "\t"){
+     my $input = s/\t|\n//g;
+   }
+   if(defined $target){
+     $graph{$target} = $deps;
+     $comgraph{$target} = $com;
+   }
 }
 
-print Dumper(\%graph);
+print Dumper(\%comgraph);
+
