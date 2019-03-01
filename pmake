@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+# Joshua Cheung johcheun@ucsc.edu
+use strict;
+use warnings;
+
+my @inputs;
+
+my $makefile = $ARGV[0];
+open my $fh, '<', $makefile or die "Cannot open file : $_"; #file handler
+use Data::Dumper;
+
+
+while(my $line = <$fh>){
+  chomp $line; #gets rid of whitespace
+  push(@inputs, $line);
+}
+
+sub parse_dep ($) {
+   my ($line) = @_;
+   return undef unless $line =~ m/^(\S+)\s*:\s*(.*?)\s*$/;
+   my ($target, $dependency) = ($1, $2);
+   my @dependencies = split m/\s+/, $dependency;
+   return $target, \@dependencies;
+}
+
+
+my %graph;
+for my $input (@inputs) {
+   my ($target, $deps) = parse_dep $input;
+   print "" and next unless defined $target;
+   $graph{$target} = $deps;
+}
+
+print Dumper(\%graph);
