@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# Joshua Cheung johcheun@ucsc.edu
 use strict;
 use warnings;
 
@@ -21,22 +20,28 @@ sub parse_dep ($) {
     my ($target, $dependency) = ($1, $2);
     my @dependencies = split m/\s+/, $dependency;
     return $target, \@dependencies;
-
 }
 
 
 my %graph;
 my %comgraph;
+my @commands;
+my $tar;
+my $com;
+
 for my $input (@inputs) {
-   my ($target, $deps) = parse_dep $input;
-   if($input=~ "\t"){
-     my $input = s/\t|\n//g;
-   }
-   if(defined $target){
-     $graph{$target} = $deps;
-     $comgraph{$target} = $com;
-   }
+  my ($target, $deps) = parse_dep $input;
+
+  if(defined $target){
+      $graph{$target} = $deps;
+      $tar = $target;
+    }else{
+      if($input=~ "\t"){
+        $input =~ s/\t|\n//g;
+        $com = $input;
+        push @{$comgraph{$tar}} , $com;
+      }
+    }
 }
 
 print Dumper(\%comgraph);
-
