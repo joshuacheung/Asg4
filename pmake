@@ -1,10 +1,12 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use POSIX qw(strftime);
+
 
 my @inputs;
 
-my $makefile = "test1";
+my $makefile = "Makefile";
 open my $fh, '<', $makefile or die "Cannot open file : $_"; #file handler
 use Data::Dumper;
 
@@ -22,29 +24,51 @@ sub parse_dep ($) {
     return $target, \@dependencies;
 }
 
+sub mtime ($) {
+   my ($filename) = @_;
+   my @stat = stat $filename;
+   return @stat ? $stat[9] : undef;
+}
+
+sub fileinfo ($) {
+   my ($filename) = @_;
+   my $mtime = mtime $filename;
+   print "$filename: ";
+   if (defined $mtime) {print strftime "%c\n", localtime $mtime}
+                  else {print "$!\n"}
+   return $mtime;
+}
+
+sub make ($){
+  my @depsref = \@_;
+  print "@depsref\n";
+}
 
 my %graph;
 my %comgraph;
 my @commands;
-
+my $tar;
+my $com;
 
 for my $input (@inputs) {
-   my ($target, $deps) = parse_dep $input;
-   if($input=~ "\t"){
-     $input =~ s/\t|\n//g;
-     print "$input\n";
-     #$commands = push $input;
-     #print"$com\n";
-   }
-   if(defined $target && defined $com){
-     \@commands;
-     $graph{$target} = $deps;
-     $comgraph{$target} = $commands;
-   }elsif(defined $target){
+  my ($target, $deps) = parse_dep $input;
+  if(defined $target){
       $graph{$target} = $deps;
+      $tar = $target;
     }else{
-      print "";
+      if($input=~ "\t"){
+        $input =~ s/\t|\n//g;
+        $com = $input;
+        push @{$comgraph{$tar}} , $com;
+      }
     }
 }
 
-print Dumper(\%graph);
+#if '@' in command then remove and call system,
+#else print command and call system
+foreach my $key (keys %graph){
+  my @deps = @{$graph{$key}};
+   make @deps;
+}
+
+print Dumper (\%graph);
