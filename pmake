@@ -39,11 +39,6 @@ sub fileinfo ($) {
    return $mtime;
 }
 
-sub make ($){
-  my @depsref = \@_;
-  print "@depsref\n";
-}
-
 my %graph;
 my %comgraph;
 my @commands;
@@ -68,7 +63,9 @@ for my $input (@inputs) {
 #else print command and call system
 foreach my $key (keys %graph){
   my @deps = @{$graph{$key}};
-   make @deps;
+  foreach my $deps (@deps){
+    print "$deps\n";
+  }
 }
 
 print Dumper (\%graph);
