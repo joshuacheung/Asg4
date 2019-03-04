@@ -4,7 +4,7 @@ use warnings;
 
 my @inputs;
 
-my $makefile = "test1";
+my $makefile = "Makefile";
 open my $fh, '<', $makefile or die "Cannot open file : $_"; #file handler
 use Data::Dumper;
 
@@ -43,5 +43,22 @@ for my $input (@inputs) {
       }
     }
 }
+
+#if '@' in command then remove and call system,
+#else print command and call system
+foreach my $key (keys %comgraph){
+
+  print "$key\n";
+  my $string = "@{$comgraph{$key}}";
+  my $firstchar = substr($string, 0,1);
+  if($firstchar =~ "@"){
+    system (substr($string, 1));
+  }else{
+    print "@{$comgraph{$key}}\n";
+    system (@{$comgraph{$key}});
+  }
+}
+
+
 
 print Dumper(\%comgraph);
