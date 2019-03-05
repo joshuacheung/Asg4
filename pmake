@@ -28,37 +28,77 @@ my %comgraph;
 my @commands;
 my $tar;
 my $com;
-
+my %macros;
+my @orderarray;
+my $key;
+my $value;
+#loop through each input line
 for my $input (@inputs) {
-  my ($target, $deps) = parse_dep $input;
 
+  my $firstChar = substr $input, 0, 1;
+  #if line has equals in it and does not start with a tab then
+  #it is assigning macros.
+  if ($input =~ /\s=\s/ && $firstChar ne "\t"){
+    chomp $input;
+    ($key, $value) = split /\s+=\s+/, $input;
+    $macros{$key} = $value;
+    push(@orderarray, $key);
+    print "\$key: $key\n";
+    print "value: $value\n";
+    print "\n";
+
+    #changes all macros to their definitions, in order of declaration
+    for my $nextinput (@inputs){
+      $nextinput =~ s/\${$key}/$value/g;
+    }
+  }
+
+  #pushing values to the commands hash and dependencies hash
+  #with targets as keys
+  my ($target, $deps) = parse_dep $input;
   if(defined $target){
       $graph{$target} = $deps;
       $tar = $target;
     }else{
       if($input=~ "\t"){
         $input =~ s/\t|\n//g;
+        print "input: $input\n";
         $com = $input;
         push @{$comgraph{$tar}} , $com;
       }
     }
 }
 
+
+
 #if '@' in command then remove and call system,
 #else print command and call system
-foreach my $key (keys %comgraph){
 
-  print "$key\n";
+#need to add while loop, while character is not '$' add to new string line,
+#when encountering a '$' find the macro in the hashtable and add the
+#value to the new string line
+foreach my $key (keys %comgraph){
+  my $count = 0;
+  my $finalcommand = "";
   my $string = "@{$comgraph{$key}}";
+
+  print "$string\n";
+
   my $firstchar = substr($string, 0,1);
   if($firstchar =~ "@"){
     system (substr($string, 1));
   }else{
-    print "@{$comgraph{$key}}\n";
-    system (@{$comgraph{$key}});
+    #print "$string\n";
+    my $macroString = "";
+    my $temp;
+
   }
+  print "final: $finalcommand\n";
+  print "\n";
+
+
 }
 
 
 
-print Dumper(\%comgraph);
+print Dumper(\%graph);
