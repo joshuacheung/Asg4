@@ -5,11 +5,42 @@ use POSIX qw(strftime);
 
 
 my @inputs;
+my %graph;
+my %comgraph;
+my @commands;
+my @target;
+my $tar;
+my $com;
+my %macros;
+my @orderarray;
+my $macroKey;
+my $value;
+
 
 my $makefile = "Makefile";
 open my $fh, '<', $makefile or die "Cannot open file : $_"; #file handler
 use Data::Dumper;
 
+for my $input (@inputs) {
+
+  my $firstChar = substr $input, 0, 1;
+  #if line has equals in it and does not start with a tab then
+  #it is assigning macros.
+  if ($input =~ /\s=\s/ && $firstChar ne "\t"){
+    chomp $input;
+    ($macroKey, $value) = split /\s+=\s+/, $input;
+    $macros{$macroKey} = $value;
+    push(@orderarray, $macroKey);
+    print "\$key: $macroKey\n";
+    print "value: $value\n";
+    print "\n";
+
+    #changes all macros to their definitions, in order of declaration
+    for my $nextinput (@inputs){
+      $nextinput =~ s/\${$macroKey}/$value/g;
+    }
+  }
+}
 
 while(my $line = <$fh>){
   chomp $line; #gets rid of whitespace
@@ -38,18 +69,63 @@ sub fileinfo ($) {
                   else {print "$!\n"}
    return $mtime;
 }
+sub runCommand($){
+  my @key = @_;
+  foreach my $key (@key){
+    my $string = "@{$comgraph{$key}}";
+    my $firstchar = substr($string, 0,1);
+    if($firstchar =~ "@"){
+      system (substr($string, 1));
+    }else{
+      print "@{$comgraph{$key}}\n";
+      system (@{$comgraph{$key}});
+    }
+  }
+}
 
-my %graph;
-my %comgraph;
-my @commands;
-my $tar;
-my $com;
+sub make {
+  my($key,@deps) = @_;
+  my $obs = 0;
+  @target = grep {!/$key/} @target;
+  if (scalar @deps >0){
+    foreach my $deps (@deps){
+      if(exists $graph{$deps}){
+        my @subdep = @{$graph{$deps}};
+        make(@subdep,$deps);
+        $obs = 1;
+      }elsif(-e $deps){
+        if(-e $key){
+          my $tartime = mtime $key;
+          my $pretime = mtime $deps;
+          if($tartime<$pretime){
+            $obs = 1;
+          }
+        }else{
+          $obs = 1;
+        }
+      }else{
+        print "prerequisite does not exist\n";
+        exit 1;
+      }
+    }
+    if($obs =~ 1){
+      runCommand $key;
+    }
+  }else{
+    runCommand $key;
+  }
+
+
+
+
+}
 
 for my $input (@inputs) {
   my ($target, $deps) = parse_dep $input;
   if(defined $target){
       $graph{$target} = $deps;
       $tar = $target;
+      push @target, $target;
     }else{
       if($input=~ "\t"){
         $input =~ s/\t|\n//g;
@@ -61,11 +137,7 @@ for my $input (@inputs) {
 
 #if '@' in command then remove and call system,
 #else print command and call system
-foreach my $key (keys %graph){
+foreach my $key (@target){
   my @deps = @{$graph{$key}};
-  foreach my $deps (@deps){
-    print "$deps\n";
-  }
+  make ($key,@deps);
 }
-
-print Dumper (\%graph);
