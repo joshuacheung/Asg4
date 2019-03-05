@@ -72,14 +72,18 @@ sub fileinfo ($) {
 sub runCommand($){
   my @key = @_;
   foreach my $key (@key){
-    my $string = "@{$comgraph{$key}}";
-    my $firstchar = substr($string, 0,1);
-    if($firstchar =~ "@"){
-      system (substr($string, 1));
-    }else{
-      print "@{$comgraph{$key}}\n";
-      system (@{$comgraph{$key}});
+    my @coms = @{$comgraph{$key}};
+    foreach my $comkey (@coms){
+      my $string = $comkey;
+      my $firstchar = substr($string, 0,1);
+      if($firstchar =~ "@"){
+         system (substr($string, 1));
+     }else{
+         print "$comkey\n";
+         system ($comkey);
+     }
     }
+
   }
 }
 
@@ -114,10 +118,6 @@ sub make {
   }else{
     runCommand $key;
   }
-
-
-
-
 }
 
 for my $input (@inputs) {
